@@ -1,0 +1,98 @@
+{
+  "Doc_Version": "1.0",
+  "Incident_Id": 1001,
+  "Account_Num": "ACC123456",
+  "Arrears": 6000,
+  "Created_By": "admin_user",
+  "Created_Dtm": "2025-03-24T16:13:41.484Z",
+  "Incident_Status": null,
+  "Incident_Status_Dtm": null,
+  "Status_Description": null,
+  "File_Name_Dump": null,
+  "Batch_Id": null,
+  "Batch_Id_Tag_Dtm": null,
+  "External_Data_Update_On": null,
+  "Filtered_Reason": null,
+  "Export_On": null,
+  "File_Name_Rejected": null,
+  "Rejected_Reason": null,
+  "Incident_Forwarded_By": "system_user",
+  "Incident_Forwarded_On": "2025-03-24T16:13:41.484Z",
+  "Contact_Details": [
+    {
+      "Contact_Type": "Mobile",
+      "Contact": "+1234567890",
+      "Create_Dtm": "2025-03-24T16:13:41.484Z",
+      "Create_By": "admin_user"
+    }
+  ],
+  "Product_Details": [
+    {
+      "Product_Label": "Internet Package",
+      "Customer_Ref": "REF123",
+      "Product_Seq": 1,
+      "Equipment_Ownership": "Customer",
+      "Product_Id": "PROD98765",
+      "Product_Name": "Fiber Internet 100Mbps",
+      "Product_Status": "Active",
+      "Effective_Dtm": "2025-03-24T16:13:41.484Z",
+      "Service_Address": "123 Main Street",
+      "Cat": "Broadband",
+      "Db_Cpe_Status": "OK",
+      "Received_List_Cpe_Status": "Received",
+      "Service_Type": "Internet",
+      "Region": "Western",
+      "Province": "Colombo"
+    }
+  ],
+  "Customer_Details": {
+    "Customer_Name": "John Doe",
+    "Company_Name": "Doe Solutions Ltd.",
+    "Company_Registry_Number": "REG20250324",
+    "Full_Address": "123 Main Street, Colombo, Sri Lanka",
+    "Zip_Code": "10100",
+    "Customer_Type_Name": "Corporate",
+    "Nic": "123456789V",
+    "Customer_Type_Id": 1,
+    "Customer_Type": "Business"
+  },
+  "Account_Details": {
+    "Account_Status": "Active",
+    "Acc_Effective_Dtm": "2025-03-24T16:13:41.485Z",
+    "Acc_Activate_Date": "2025-03-24T16:13:41.485Z",
+    "Credit_Class_Id": 2,
+    "Credit_Class_Name": "Gold",
+    "Billing_Centre": "Colombo Central",
+    "Customer_Segment": "SME",
+    "Mobile_Contact_Tel": "+1234567890",
+    "Daytime_Contact_Tel": "+0987654321",
+    "Email_Address": "john.doe@example.com",
+    "Last_Rated_Dtm": "2025-03-24T16:13:41.485Z"
+  },
+  "Last_Actions": [
+    {
+      "Billed_Seq": 1,
+      "Billed_Created": "2025-03-24T16:13:41.485Z",
+      "Payment_Seq": 1,
+      "Payment_Created": "2025-03-24T16:13:41.485Z",
+      "Payment_Money": 500,
+      "Billed_Amount": 750
+    }
+  ],
+  "Marketing_Details": [
+    {
+      "ACCOUNT_MANAGER": "Jane Smith",
+      "CONSUMER_MARKET": "Urban",
+      "Informed_To": "John Doe",
+      "Informed_On": "2025-03-24T16:13:41.485Z"
+    }
+  ],
+  "Action": "Follow-up Required",
+  "Validity_period": 30,
+  "Remark": "Customer contacted about issue",
+  "updatedAt": "2025-03-24T16:13:41.485Z",
+  "Rejected_By": "",
+  "Rejected_Dtm": "2025-03-24T16:13:41.485Z",
+  "Arrears_Band": "Medium",
+  "Source_Type": null
+}

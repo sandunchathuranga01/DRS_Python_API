@@ -40,7 +40,7 @@ async def read_root():
     </head>
     <body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
         <h1>Welcome to the Incident Management API</h1>
-        <p>Use <b><a href="http://0.0.0.0:5000/docs" style="text-decoration: none; color: blue;">http://0.0.0.0:5000/docs</a></b> to explore the available endpoints.</p>
+        <p>Use <b><a href="http://127.0.0.1:8000/docs" style="text-decoration: none; color: blue;">http://127.0.0.1:8000/docs</a></b> to explore the available endpoints.</p>
     </body>
     </html>
     """
@@ -50,7 +50,7 @@ app.include_router(CreateIncidentRoute)
 
 def main():
     logger.info("Starting Incident Management API")
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
 
 if __name__ == "__main__":
     main()

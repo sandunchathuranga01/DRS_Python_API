@@ -1,0 +1,31 @@
+create special_product_status filter
+    try
+        check product status with source type
+        filter_06_details = {'new_filter_id': 16, 'filter_rule': 'Specific Product Status', 'operator': 'equal', 'rule_values': ['SU'], 'source_type': ['special', 'pilot suspend']}
+        if rule value=SU & source_type = null or source_type =! special or pilot suspend
+            update incident_dict
+
+            incident_dict = New_incident_dict
+
+            return New_Incident_dict
+
+
+        elif rule value=SU & source_type = special or pilot suspend
+            return False
+
+
+        else
+            return False
+
+    except
+        return False
+
+
+
+Edit incident_filter_main_product_status(incident) function
+        now its check only first array only.
+        but it should check all arrays
+
+check loggers
+
+incident create dtm
