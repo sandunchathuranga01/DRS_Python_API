@@ -61,20 +61,28 @@ def get_f1_filter_result(incident_dict):
     initialize_hash_maps()
     try:
         if isinstance(incident_dict, dict):  # Ensure it's properly initialized
-            incident_dict_with_arrears_band = insert_arrears_band(incident_dict)
 
-            if not incident_dict_with_arrears_band:
+            #insert arrears band into coming incident dictionary
+            arrears_band_inserted_incident_dict = insert_arrears_band(incident_dict)
+            logger_INC1A01.debug(arrears_band_inserted_incident_dict)
+
+            #checking arrears_band_inserted_incident_dict availability
+            if not arrears_band_inserted_incident_dict:
                 raise NotModifiedResponse("Arrears band not modified")
 
-            final_result = do_f1_filter_for_incident_dict(incident_dict_with_arrears_band)
-            print("Final result:", final_result)
+            #assign arrears_band_inserted_incident_dict in to f1 filter
+            final_result = do_f1_filter_for_incident_dict(arrears_band_inserted_incident_dict)
+            logger_INC1A01.debug("Final result:", final_result)
+
+            #return final result
             return final_result
+
         else:
             logger_INC1A01.error("incident_dict is not a valid dictionary!")
             return {}
 
     except NotModifiedResponse:
-        logger_INC1A01.info("No valid data found.")
+        logger_INC1A01.info("No valid data found,Arrears band not modified")
         return {}
 
     except Exception as e:

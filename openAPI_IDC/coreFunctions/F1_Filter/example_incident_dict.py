@@ -4,7 +4,7 @@ incident_dict = {
     "Doc_Version": 1.0,
     "Incident_Id": 1801,
     "Account_Num": "ACC123456",
-    "Arrears": 3055000.0,
+    "Arrears": 2500,
     "arrears_band" : None,
     "Created_By": "admin_user",
     "Created_Dtm": "2025-03-24T16:13:41.484Z",

@@ -8,48 +8,57 @@ logger_INC1A01 = get_logger('INC1A01')
 
 def insert_arrears_band(incident_dict):
     try:
-         arrears_bands = get_arrears_bands_details()
+        arrears_bands = get_arrears_bands_details()
 
-         #example of return on arrears_bands
-         #arrears_bands = {'AB-5_10': '5000-10000', 'AB-10_25': '10000-25000', 'AB-25_50': '25000-50000', 'AB-50_100': '50000-100000', 'AB-100<': '100000<', 'CP_Collect': 'CP_Collect'}
+        if not arrears_bands:
+            raise DataNotFoundError("Arrears Band not found")
 
-         if not arrears_bands:
-             raise DataNotFoundError("Arrears Band not found")
+        arrears = incident_dict.get("Arrears", 0)
 
-         arrears = incident_dict.get("Arrears", 0)
+        # if arrears is None or not isinstance(arrears, (int, float)) or arrears < 0:
+        #     raise DataNotFoundError("Invalid or missing arrears value")
 
-         if arrears < 0 or not arrears:
-             raise DataNotFoundError("Arrears value cannot be find")
+        band_found = None
 
-         band_found = None
+        for band, range_str in arrears_bands.items():
+            if isinstance(range_str, str):
+                range_str = range_str.strip()
 
-         for band, range_str in arrears_bands.items():
-             if "<" in range_str:
-                 # handle open-ended case like "100000<"
-                 lower = float(range_str.replace("<", ""))
-                 if arrears >= lower:
-                     band_found = band
-                     break
-             elif "-" in range_str:
-                 lower_str, upper_str = range_str.split("-")
-                 lower = float(lower_str)
-                 upper = float(upper_str)
-                 if lower <= arrears < upper:
-                     band_found = band
-                     break
-             elif range_str == "CP_Collect":
-                 continue  # skip non-numeric band
+                if range_str.endswith("<"):  # e.g. '100000<'
+                    lower = float(range_str.replace("<", ""))
+                    if arrears >= lower:
+                        band_found = band
+                        break
 
-         incident_dict["arrears_band"] = band_found
-         return incident_dict
+                elif range_str.startswith("<"):  # e.g. '<1000'
+                    upper = float(range_str.replace("<", ""))
+                    if arrears < upper:
+                        band_found = band
+                        break
 
-    except DataNotFoundError:
-        logger_INC1A01.warning("Arrears Band not found")
+                elif "-" in range_str:  # e.g. '1000-2500'
+                    try:
+                        lower_str, upper_str = range_str.split("-")
+                        lower = float(lower_str)
+                        upper = float(upper_str)
+                        if lower <= arrears < upper:
+                            band_found = band
+                            break
+                    except ValueError:
+                        logger_INC1A01.warning(f"Invalid range format in band: {range_str}")
+                        continue
+
+        incident_dict["arrears_band"] = band_found
+        return incident_dict
+
+    except DataNotFoundError as e:
+        logger_INC1A01.warning(f"{e}")
         return {}
 
     except Exception as e:
         logger_INC1A01.error(f"Unexpected error: {e}")
         return {}
+
 
 def get_arrears_bands_details():
     db = False
@@ -57,7 +66,7 @@ def get_arrears_bands_details():
         db = get_db_connection()
 
         if db is False:
-            raise DatabaseConnectionError("Could not connect to MongoDB")
+            raise DatabaseConnectionError("Could not connect to Data base")
 
         collection = db["Arrears_bands"]
 
@@ -71,9 +80,15 @@ def get_arrears_bands_details():
             return arrears_bands
         else:
             logger_INC1A01.info("No arrears band data found in the collection.")
+            return {}
+
+    except DatabaseConnectionError:
+        logger_INC1A01.error("Could not connect to Data base")
+        return {}
 
     except Exception as e:
         logger_INC1A01.error(f"Unexpected error in get_arrears_bands_details: {e}")
+        return {}
 
     finally:
         if db is not False:
