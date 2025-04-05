@@ -133,10 +133,10 @@ def get_line_by_new_filter_id(target_new_filter_id):
 
 if __name__ == "__main__":
     initialize_hash_maps()
-    print(get_active_filters())
+    # print(get_active_filters())
     print(get_new_filter_id_list_from_active_filters())
-    filter_01_details = get_line_by_new_filter_id(11)
-    print(filter_01_details)
+    # filter_01_details = get_line_by_new_filter_id(11)
+    # print(filter_01_details)
 
 
 #output this main
