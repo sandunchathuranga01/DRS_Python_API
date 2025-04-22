@@ -66,6 +66,6 @@ def do_f1_filter(value, incident_dict, filter_details):
             return incident_filter_specific_product_status(incident_dict, filter_details)
         case _:
             # If no valid filter is found, return as-is with info log
-            logger_INC1A01.info(f"No filter found for value: {value}")
+            logger_INC1A01.error(f"No filter found for value: {value}")
             return incident_dict
 # endregion

@@ -50,8 +50,12 @@ class AccountDetail(BaseModel):
     Email_Address: Optional[str] = None
     Last_Rated_Dtm: Optional[datetime] = None
 
-class LinkAccounts(BaseModel):
+class AccountDetails(BaseModel):
+    Id: int
+    DRCMood : str
     Account_Num: str
+    Account_Status: str
+    OutstandingBalance:float
 
 class LastAction(BaseModel):
     Billed_Seq: Optional[int] = None
@@ -88,7 +92,7 @@ class Incident(BaseModel):
     Rejected_Reason: Optional[str] = None
     Incident_Forwarded_By: Optional[str] = None
     Incident_Forwarded_On: Optional[datetime] = None
-    Link_Accounts: Optional[List[LinkAccounts]] = None
+    Link_Accounts: Optional[List[AccountDetails]] = None
     Contact_Details: List[ContactDetail]
     Product_Details: List[ProductDetail]
     Customer_Details: CustomerDetail

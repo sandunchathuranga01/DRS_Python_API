@@ -75,10 +75,10 @@ def do_f1_filter_for_incident_dict(incident_dict):
                     f"Incident rejected at filter_id {filter_id} with reason: {updated_incident['Filtered_Reason']}")
                 return updated_incident
 
-        # If already filtered before, don't apply Level 2
-        if incident_dict.get("Filtered_Reason"):
-            logger_INC1A01.info("Incident already filtered by level 1 filter. Skipping level 2 filtering.")
-            return incident_dict
+        # # If already filtered before, don't apply Level 2
+        # if incident_dict.get("Filtered_Reason"):
+        #     logger_INC1A01.info("Incident already filtered by level 1 filter. Skipping level 2 filtering.")
+        #     return incident_dict
 
         # If no Level 1 filter triggered, apply Level 2
         logger_INC1A01.info("No filter triggered at level 01. Running level 02 filters...")
@@ -115,16 +115,11 @@ def get_modified_incident_dict(incident_dict):
         dict: Updated incident_dict with status, description, and filter outcome.
     """
     try:
-        # Ensure valid input format
-        if not isinstance(incident_dict, dict):
-            logger_INC1A01.error("incident_dict is not a valid dictionary!")
-            return {}
-
-        # Check if account already exists in open cases
+        # Check if account already exists as open cases
         if has_open_case_for_account(incident_dict) is True:
             raise AccountNumberAlreadyExists(f"{incident_dict.get('account_number')} already exists in open cases")
 
-        # Add linked accounts with same customer_ref
+        # Add linked accounts with respect to customer_ref
         incident_dict = link_accounts_from_open_cases(incident_dict)
 
         # Assign arrears band using configured bands

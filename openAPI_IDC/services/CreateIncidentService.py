@@ -67,19 +67,18 @@ def create_incident(incident: Incident):
 
     except Exception as e:
         # Handle any errors that occur during connection setup
-        print(f"Connection error: {e}")
-        return False
+        logger_INC1A01.info(f"Connection error: {e}")
+        return IncidentServiceResponse(success=False, error="Mongo DB connection error")
 
     else:
         try:
             # Convert Pydantic model to dict and add status
+            # CreateIncidentModel
             incident_dict = incident.dict()
+
             incident_dict["Incident_Status"] = "Success"
-            incident_dict["updatedAt"] = datetime.now()
 
-            logger_INC1A01.debug(f"Original incident: {incident_dict}")
-
-            # Apply filters/modifications to the incident
+            # Apply filters/modifications to the incident (F1 filter)
             new_incident = get_modified_incident_dict(incident_dict)
 
             # If modification failed, raise a known exception
@@ -90,6 +89,8 @@ def create_incident(incident: Incident):
             collection = db["Incidents"]
             collection.create_index("Incident_Id", unique=True)
 
+            incident_dict["updatedAt"] = datetime.now()
+
             # Insert the incident document
             collection.insert_one(new_incident)
 
@@ -98,17 +99,20 @@ def create_incident(incident: Incident):
 
         except DuplicateKeyError as dup_err:
             # Handle duplicate Incident_Id error
-            logger_INC1A01.warning(f"Duplicate Incident_Id: {incident_dict['Incident_Id']}")
+            logger_INC1A01.error(f"Duplicate Incident_Id: {incident_dict['Incident_Id']}")
+            logger_INC1A01.error(f"Original incident: {incident}")
             return IncidentServiceResponse(success=False, error=dup_err)
 
         except NotModifiedResponse as mod_err:
             # Handle business rule failure
-            logger_INC1A01.warning(f"Incident dict modification failed: {mod_err}")
+            logger_INC1A01.error(f"Incident dict modification failed: {mod_err}")
+            logger_INC1A01.error(f"Original incident: {incident}")
             return IncidentServiceResponse(success=False, error=mod_err)
 
         except Exception as e:
             # Handle any other exception
             logger_INC1A01.error(f"Error inserting incident: {e}")
+            logger_INC1A01.error(f"Original incident: {incident}")
             return IncidentServiceResponse(success=False, error=e)
 
     finally:

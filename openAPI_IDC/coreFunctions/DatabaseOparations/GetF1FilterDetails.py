@@ -69,10 +69,10 @@ def get_active_filters():
             }
 
             try:
-                # Fetch all matching documents
-                documents = collection.find(query)
+                # Fetch all matching filter_documents
+                filter_documents = collection.find(query)
 
-                for doc in documents:
+                for doc in filter_documents:
                     filter_id = doc.get("filter_id")
                     new_filter_id = filter_id_map.get(filter_id)
 
@@ -84,7 +84,7 @@ def get_active_filters():
                     rule_values = [v.get("value") for v in doc.get("rule_values", [])]
                     source_type = [v.get("value") for v in doc.get("source_type", [])]
 
-                    # Add filter details to hash map
+                    # Add filter details to dict
                     filter_details[filter_id] = {
                         "new_filter_id": new_filter_id,
                         "filter_rule": filter_rule,

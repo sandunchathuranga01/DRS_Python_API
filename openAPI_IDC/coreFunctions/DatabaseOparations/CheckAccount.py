@@ -55,26 +55,40 @@ def has_open_case_for_account(incident_dict):
             # Access the case collection
             collection = db["Case_details"]
 
-            # Get the account number from incident_dict
-            account_number = incident_dict.get("Account_Num")
+            query = {
+                "Account_Num": incident_dict.get("Account_Num"),
+                "case_current_status": {
+                    "$nin": ["Case Close", "Write-Off", "Abandoned","Withdraw"]
+                }
+            }
 
-            if not account_number:
-                logger_INC1A01.warning("Account number not found in incident_dict.")
-                return False
+            # Execute query
+            results = list(collection.find(query))
 
-            # Find cases with the same account number
-            case_documents = collection.find({"Account_Num": account_number})
-
-            # Check if any case is not closed
-            for case in case_documents:
-                status = case.get("case_current_status", "").lower()
-                if status != "close":
-                    logger_INC1A01.info(f"Open case found for Account_Num: {account_number}, status: {status}")
-                    return True
-
-            # No open cases found
-            logger_INC1A01.info(f"No open cases found for Account_Num: {account_number}")
+            # Print results
+            for doc in results:
+                print(doc)
+                return True
             return False
+
+            # # Get the account number from incident_dict
+            # account_number = incident_dict.get("Account_Num")
+            #
+            #
+            #
+            # # Find cases with the same account number
+            # case_documents = collection.find({"Account_Num": account_number})
+            #
+            # # Check if any case is not closed
+            # for case in case_documents:
+            #     status = case.get("case_current_status", "").lower()
+            #     if status != "close":
+            #         logger_INC1A01.info(f"Open case found for Account_Num: {account_number}, status: {status}")
+            #         return True
+            #
+            # # No open cases found
+            # logger_INC1A01.info(f"No open cases found for Account_Num: {account_number}")
+            # return False
 
         except Exception as e:
             logger_INC1A01.error(f"Error while checking open cases for account: {e}")
@@ -115,10 +129,6 @@ def link_accounts_from_open_cases(incident_dict):
 
             # Get customer_ref from incident
             customer_ref = incident_dict.get("Customer_Details", {}).get("customer_ref")
-
-            if not customer_ref:
-                logger_INC1A01.warning("customer_ref not found in incident_dict.")
-                return incident_dict
 
             # Make sure Link_Accounts is a list
             if not isinstance(incident_dict.get("Link_Accounts"), list):

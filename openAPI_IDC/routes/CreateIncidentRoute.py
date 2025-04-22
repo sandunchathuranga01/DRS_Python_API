@@ -57,7 +57,8 @@ async def create_incident_endpoint(incident: Incident):
     Endpoint to handle incoming incident creation requests.
     Calls the service function and returns appropriate HTTP responses.
     """
-    logger_INC1A01.info("Starting the incident creation process.")
+
+    logger_INC1A01.info(f"Received the incident data: /n {incident}")
     API_Start_time = datetime.now()
 
     # Call the service to create the incident
