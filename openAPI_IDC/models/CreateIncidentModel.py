@@ -92,7 +92,7 @@ class Incident(BaseModel):
     Rejected_Reason: Optional[str] = None
     Incident_Forwarded_By: Optional[str] = None
     Incident_Forwarded_On: Optional[datetime] = None
-    Link_Accounts: Optional[List[AccountDetails]] = None
+    Accounts_Details: Optional[List[AccountDetails]] = None
     Contact_Details: List[ContactDetail]
     Product_Details: List[ProductDetail]
     Customer_Details: CustomerDetail
