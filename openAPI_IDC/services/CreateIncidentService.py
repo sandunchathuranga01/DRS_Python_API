@@ -78,12 +78,12 @@ def create_incident(incident: Incident):
 
             incident_dict["Incident_Status"] = "Success"
 
-            # Apply filters/modifications to the incident (F1 filter)
-            new_incident = get_modified_incident_dict(incident_dict)
-
-            # If modification failed, raise a known exception
-            if new_incident.get("Incident_Status") == "Error":
-                raise NotModifiedResponse(new_incident.get("Status_Description"))
+            # # Apply filters/modifications to the incident (F1 filter)
+            # new_incident = get_modified_incident_dict(incident_dict)
+            #
+            # # If modification failed, raise a known exception
+            # if new_incident.get("Incident_Status") == "Error":
+            #     raise NotModifiedResponse(new_incident.get("Status_Description"))
 
             # Access collection and ensure unique Incident_Id index
             collection = db["Incidents"]
@@ -92,7 +92,7 @@ def create_incident(incident: Incident):
             incident_dict["updatedAt"] = datetime.now()
 
             # Insert the incident document
-            collection.insert_one(new_incident)
+            collection.insert_one(incident_dict)
 
             # Return successful response with the incident ID
             return IncidentServiceResponse(success=True, data=incident_dict["Incident_Id"])

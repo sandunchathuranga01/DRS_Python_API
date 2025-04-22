@@ -72,8 +72,8 @@ app.include_router(CreateIncidentRoute)
 # region Main Function
 def main():
     logger_INC1A01.info("Starting Incident Management API")
-    #uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    #uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
 
 if __name__ == "__main__":
     main()
