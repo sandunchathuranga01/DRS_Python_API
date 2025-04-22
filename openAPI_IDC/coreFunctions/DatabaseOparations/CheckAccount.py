@@ -18,6 +18,7 @@
 # region Imports
 from pymongo import MongoClient
 from openAPI_IDC.coreFunctions.ConfigManager import get_config
+from openAPI_IDC.coreFunctions.F1_Filter.example_incident_dict import incident_dict
 from utils.logger.loggers import get_logger
 # endregion
 
@@ -28,77 +29,65 @@ logger_INC1A01 = get_logger('INC1A01')
 # region has_open_case_for_account
 def has_open_case_for_account(incident_dict):
     """
-    Checks if there is any open case (status not 'close') for the given Account_Num.
-    Returns True if at least one open case is found, otherwise False.
+    Checks if there is any open case (status not in ["Case Close", "Write-Off", "Abandoned", "Withdraw"])
+    for the given Account_Num in the incident_dict.
+
+    Returns:
+        True  -> if at least one open case is found
+        False -> if no open cases or if an error occurs
     """
     client = None
     try:
-        # Load MongoDB configuration from the config hash map
+        # Load MongoDB configuration (URI and DB name) from the config hash map
         db_config = get_config("database", "DATABASE")
 
-        # Create the MongoDB client
+        # Initialize the MongoDB client
         client = MongoClient(db_config.get("mongo_uri").strip())
 
-        # Check the database connection (ping)
+        # Test the connection to the MongoDB server
         client.admin.command('ping')
 
-        # Select the target database
+        # Access the specific database
         db = client[db_config.get("db_name").strip()]
 
     except Exception as e:
-        # Log and return if connection fails
+        # Log any errors during connection setup
         logger_INC1A01.error(f"Connection error: {e}")
-        return False
 
     else:
         try:
-            # Access the case collection
+            # Select the Case_details collection
             collection = db["Case_details"]
 
+            # Build query to find open cases for the given account number
             query = {
-                "Account_Num": incident_dict.get("Account_Num"),
+                "account_no": incident_dict.get("Account_Num"),
                 "case_current_status": {
-                    "$nin": ["Case Close", "Write-Off", "Abandoned","Withdraw"]
+                    # Exclude cases that are already closed or inactive
+                    "$nin": ["Case Close", "Write-Off", "Abandoned", "Withdraw"]
                 }
             }
 
-            # Execute query
-            results = list(collection.find(query))
+            # Count how many documents match the criteria
+            Count_of_active_cases = len(list(collection.find(query)))
 
-            # Print results
-            for doc in results:
-                print(doc)
+            # Return True if there's at least one open case
+            if Count_of_active_cases > 0:
                 return True
-            return False
-
-            # # Get the account number from incident_dict
-            # account_number = incident_dict.get("Account_Num")
-            #
-            #
-            #
-            # # Find cases with the same account number
-            # case_documents = collection.find({"Account_Num": account_number})
-            #
-            # # Check if any case is not closed
-            # for case in case_documents:
-            #     status = case.get("case_current_status", "").lower()
-            #     if status != "close":
-            #         logger_INC1A01.info(f"Open case found for Account_Num: {account_number}, status: {status}")
-            #         return True
-            #
-            # # No open cases found
-            # logger_INC1A01.info(f"No open cases found for Account_Num: {account_number}")
-            # return False
+            else:
+                return False
 
         except Exception as e:
+            # Log any errors that occur during query execution
             logger_INC1A01.error(f"Error while checking open cases for account: {e}")
             return False
 
     finally:
-        # Always close the MongoDB connection
+        # Ensure the MongoDB client is closed after the operation
         if client:
             client.close()
             logger_INC1A01.info("MongoDB connection closed.")
+
 # endregion
 
 # region link_accounts_from_open_cases
@@ -173,3 +162,7 @@ def link_accounts_from_open_cases(incident_dict):
             client.close()
             logger_INC1A01.info("MongoDB connection closed.")
 # endregion
+
+
+if __name__ == "__main__":
+    has_open_case_for_account(incident_dict)
