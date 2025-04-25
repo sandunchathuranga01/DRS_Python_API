@@ -1,14 +1,16 @@
 """
     Purpose:
-    This module defines the service responsible for creating a new incident
-    in the MongoDB database and applying necessary filters.
+    This module provides a service function to create a new incident in the MongoDB database.
+    It ensures the incident data is modified using predefined filters, validates unique incident IDs,
+    and manages account linking before insertion.
 
     Description:
-    - Retrieves configuration from hash maps.
-    - Applies filtering logic via `get_modified_incident_dict()`.
-    - Ensures unique `Incident_Id` during insertion.
-    - Handles DuplicateKeyError, filter rule rejection, and generic errors.
-    - Returns a structured service response using the `IncidentServiceResponse` class.
+    - Initializes configuration using `initialize_hash_maps`.
+    - Converts the Pydantic `Incident` model to a dictionary and adds metadata.
+    - Applies data transformation and filtering using `get_modified_incident_dict`.
+    - Validates and links related customer accounts before inserting the incident.
+    - Handles all exceptions and logs relevant errors.
+    - Returns a structured response via `IncidentServiceResponse`.
 
     Created Date: 2025-03-23
     Created By: Sandun Chathuranga(csandun@104@gmail.com)
@@ -19,11 +21,11 @@
 
 # region Imports
 from datetime import datetime
-from pymongo.errors import DuplicateKeyError
-from openAPI_IDC.coreFunctions.ConfigManager import get_config, initialize_hash_maps
+from openAPI_IDC.coreFunctions.ConfigManager import initialize_hash_maps
+from openAPI_IDC.coreFunctions.DataManipulation import create_incident_data_manipulation
+from openAPI_IDC.coreFunctions.DatabaseOparations.CheckAccount import customer_link_accounts_details
 from openAPI_IDC.coreFunctions.ModifyIncidentDict import get_modified_incident_dict
 from openAPI_IDC.models.CreateIncidentModel import Incident
-from pymongo import MongoClient
 from utils.customerExceptions.cust_exceptions import NotModifiedResponse
 from utils.logger.loggers import get_logger
 # endregion
@@ -39,85 +41,67 @@ initialize_hash_maps()
 # region Response Class
 class IncidentServiceResponse:
     def __init__(self, success: bool, data=None, error: Exception = None):
-        self.success = success    # True if operation was successful
-        self.data = data          # Holds the result (like incident_id)
-        self.error = error        # Holds the exception, if any
+        self.success = success
+        self.data = data
+        self.error = error
 # endregion
 
 # region Main Function
 def create_incident(incident: Incident):
     """
-    Handles creation of a new incident document in the MongoDB database.
-    Applies filters and ensures data integrity with unique index enforcement.
-    Returns a structured service response.
+    Creates and inserts a new incident document into the MongoDB database.
+
+    Steps:
+    - Converts input Pydantic model to a dictionary and marks status as 'Success'.
+    - Applies filtering and modification logic to the incident data.
+    - Checks for modification rejection via filter rules.
+    - Links customer-related account details before insertion.
+    - Calls data manipulation logic to perform MongoDB insertion.
+    - Returns a structured success or error response.
+
+    Args:
+        incident (Incident): A validated Pydantic model representing the new incident.
+
+    Returns:
+        IncidentServiceResponse: Contains success flag, inserted incident ID, or an error.
     """
-    client = None
     try:
-        # Fetch MongoDB connection configuration from the configuration hash map
-        db_config = get_config("database", "DATABASE")
+        # Convert the Pydantic model(CreateIncidentModel.py) to a dictionary
+        incident_dict = incident.dict()
 
-        # Create a MongoDB client using the URI from the config
-        client = MongoClient(db_config.get("mongo_uri").strip())
+        # Initial status set to Success
+        incident_dict["Incident_Status"] = "Success"
 
-        # This ensures MongoDB is reachable and credentials are valid
-        client.admin.command('ping')
+        # Placeholder for filter reason (empty initially)
+        incident_dict["Filtered_Reason"] = ""
 
-        # Select the target database using its name from the config
-        db = client[db_config.get("db_name").strip()]
+        # Modify retrieve incident data
+        new_incident = get_modified_incident_dict(incident_dict)
+
+        # Stop if filtering rejected the incident
+        if new_incident.get("Incident_Status") == "Error":
+            raise NotModifiedResponse(new_incident.get("Status_Description"))
+
+        # Add/update current timestamp
+        incident_dict["updatedAt"] = datetime.now()
+
+        # Insert and update incident
+        result = create_incident_data_manipulation(customer_link_accounts_details, new_incident)
+
+        if not result.get("success"):
+            logger_INC1A01.error(f"Data manipulation failed: {result.get('error')}")
+            return IncidentServiceResponse(success=False, error=result.get("error"))
+
+        return IncidentServiceResponse(success=True, data=result.get("data"))
+
+    except NotModifiedResponse as mod_err:
+        logger_INC1A01.error(f"Incident dict modification failed: {mod_err}")
+        logger_INC1A01.error(f"Original incident: {incident}")
+        return IncidentServiceResponse(success=False, error=mod_err)
 
     except Exception as e:
-        # Handle any errors that occur during connection setup
-        logger_INC1A01.info(f"Connection error: {e}")
-        return IncidentServiceResponse(success=False, error="Mongo DB connection error")
+        logger_INC1A01.error(f"Error inserting incident: {e}")
+        logger_INC1A01.error(f"Original incident: {incident}")
+        return IncidentServiceResponse(success=False, error=e)
 
-    else:
-        try:
-            # Convert Pydantic model to dict and add status
-            # CreateIncidentModel
-            incident_dict = incident.dict()
-
-            incident_dict["Incident_Status"] = "Success"
-
-            # # Apply filters/modifications to the incident (F1 filter)
-            # new_incident = get_modified_incident_dict(incident_dict)
-            #
-            # # If modification failed, raise a known exception
-            # if new_incident.get("Incident_Status") == "Error":
-            #     raise NotModifiedResponse(new_incident.get("Status_Description"))
-
-            # Access collection and ensure unique Incident_Id index
-            collection = db["Incidents"]
-            collection.create_index("Incident_Id", unique=True)
-
-            incident_dict["updatedAt"] = datetime.now()
-
-            # Insert the incident document
-            collection.insert_one(incident_dict)
-
-            # Return successful response with the incident ID
-            return IncidentServiceResponse(success=True, data=incident_dict["Incident_Id"])
-
-        except DuplicateKeyError as dup_err:
-            # Handle duplicate Incident_Id error
-            logger_INC1A01.error(f"Duplicate Incident_Id: {incident_dict['Incident_Id']}")
-            logger_INC1A01.error(f"Original incident: {incident}")
-            return IncidentServiceResponse(success=False, error=dup_err)
-
-        except NotModifiedResponse as mod_err:
-            # Handle business rule failure
-            logger_INC1A01.error(f"Incident dict modification failed: {mod_err}")
-            logger_INC1A01.error(f"Original incident: {incident}")
-            return IncidentServiceResponse(success=False, error=mod_err)
-
-        except Exception as e:
-            # Handle any other exception
-            logger_INC1A01.error(f"Error inserting incident: {e}")
-            logger_INC1A01.error(f"Original incident: {incident}")
-            return IncidentServiceResponse(success=False, error=e)
-
-    finally:
-        # Close the MongoDB client connection
-        if client:
-            client.close()
-            logger_INC1A01.info("MongoDB connection closed.")
 # endregion

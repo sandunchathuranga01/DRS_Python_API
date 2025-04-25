@@ -67,7 +67,7 @@ async def create_incident_endpoint(incident: Incident):
     # Success case
     if result.success:
         incident_id = result.data
-        logger_INC1A01.info(f"Incident created successfully (id: {incident_id})")
+        logger_INC1A01.info(f"Incident created successfully (Incident_ID: {incident_id})")
 
         # Log processing time
         duration = (datetime.now() - API_Start_time).total_seconds()

@@ -2,9 +2,10 @@
 
 incident_dict = {
     "Doc_Version": 1.0,
-    "Incident_Id": 1801,
-    "Account_Num": "ACC123456",
-    "Arrears": 0,
+    "Incident_Id": 10,
+    "Account_Num": "12345678",
+    "customer_ref": "CUST-REF-001",
+    "Arrears": 1500,
     "arrears_band" : "",
     "Created_By": "admin_user",
     "Created_Dtm": "2025-03-24T16:13:41.484Z",
@@ -21,7 +22,15 @@ incident_dict = {
     "Rejected_Reason": "",
     "Incident_Forwarded_By": "system_user",
     "Incident_Forwarded_On": "2025-03-24T16:13:41.484Z",
-    "Link_Accounts":[],
+    "Account_Cross_Details":[
+        {
+            "Incident_Id": 1,
+            "Case_Id": "",
+            "Account_Num": "12345678",
+            "Account_Status": "",
+            "OutstandingBalance": 1500
+        }
+    ],
     "Contact_Details": [
         {
             "Contact_Type": "Mobile",
@@ -33,7 +42,7 @@ incident_dict = {
     "Product_Details": [
         {
             "Product_Label": "Internet Package",
-            "Customer_Ref": "REF123",
+            "Customer_Ref": "CUST-REF-001",
             "Product_Seq": 1,
             "Equipment_Ownership": "Customer",
             "Product_Id": "PROD98765",
@@ -50,7 +59,6 @@ incident_dict = {
         }
     ],
     "Customer_Details": {
-        "customer_ref" : "CUST-REF-001",
         "Customer_Name": "saman",
         "Company_Name": "Doe Solutions Ltd.",
         "Company_Registry_Number": "REG20250324",

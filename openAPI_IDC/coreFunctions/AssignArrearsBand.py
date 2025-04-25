@@ -95,6 +95,7 @@ def assign_arrears_band(incident_dict):
 
         # Assign the matched band to the incident
         incident_dict["arrears_band"] = band_found
+        logger_INC1A01.info(f"arrears band assign incident dict: {incident_dict}")
         return incident_dict
 
     except DataNotFoundError as Data_Not_Found_Error:

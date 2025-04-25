@@ -59,7 +59,7 @@ def get_arrears_bands_details():
     except Exception as e:
         # Log connection issues
         logger_INC1A01.error(f"Connection error: {e}")
-        return False
+        return {"success": False, "error": "Mongo DB connection error"}
 
     else:
         try:
@@ -102,5 +102,4 @@ def get_arrears_bands_details():
         # Clean up MongoDB connection
         if client:
             client.close()
-            logger_INC1A01.info("MongoDB connection closed.")
 # endregion

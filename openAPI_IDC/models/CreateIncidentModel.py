@@ -35,7 +35,6 @@ class CustomerDetail(BaseModel):
     Nic: Optional[str] = None
     Customer_Type_Id: int
     Customer_Type: str
-    customer_ref : str
 
 class AccountDetail(BaseModel):
     Account_Status: str
@@ -50,11 +49,11 @@ class AccountDetail(BaseModel):
     Email_Address: Optional[str] = None
     Last_Rated_Dtm: Optional[datetime] = None
 
-class AccountDetails(BaseModel):
-    Id: int
-    DRCMood : str
+class AccountCrossDetails(BaseModel):
+    Incident_Id: Optional[int] = None
+    Case_Id: Optional[int] = None
     Account_Num: str
-    Account_Status: str
+    Account_Status: Optional[str] = None
     OutstandingBalance:float
 
 class LastAction(BaseModel):
@@ -75,6 +74,7 @@ class Incident(BaseModel):
     Doc_Version: float = 1.0
     Incident_Id: int
     Account_Num: str
+    customer_ref : str
     Arrears: float
     arrears_band : Optional[str]
     Created_By: str
@@ -92,7 +92,7 @@ class Incident(BaseModel):
     Rejected_Reason: Optional[str] = None
     Incident_Forwarded_By: Optional[str] = None
     Incident_Forwarded_On: Optional[datetime] = None
-    Accounts_Details: Optional[List[AccountDetails]] = None
+    Account_Cross_Details: Optional[List[AccountCrossDetails]] = None
     Contact_Details: List[ContactDetail]
     Product_Details: List[ProductDetail]
     Customer_Details: CustomerDetail

@@ -20,11 +20,14 @@
 
 # region Imports
 from datetime import datetime
-from openAPI_IDC.coreFunctions.DatabaseOparations.CheckAccount import has_open_case_for_account, link_accounts_from_open_cases
+
+from openAPI_IDC.coreFunctions.ConfigManager import initialize_hash_maps
+from openAPI_IDC.coreFunctions.DatabaseOparations.CheckAccount import has_open_case_for_account, link_accounts_from_open_accounts
 from openAPI_IDC.coreFunctions.F1_Filter.F1Filter import do_f1_filter
 from openAPI_IDC.coreFunctions.AssignArrearsBand import assign_arrears_band
-from openAPI_IDC.coreFunctions.F1_Filter.SelectCriteria import do_f1_filter_level_02_for_incident_dict
+from openAPI_IDC.coreFunctions.F1_Filter.SelectCriteria import Select_Criteria_for_incident_dict
 from openAPI_IDC.coreFunctions.DatabaseOparations.GetF1FilterDetails import get_new_filter_id_list_from_active_filters, get_active_filters
+from openAPI_IDC.coreFunctions.F1_Filter.example_incident_dict import incident_dict
 from utils.customerExceptions.cust_exceptions import DataNotFoundError, NotModifiedResponse, AccountNumberAlreadyExists
 from utils.logger.loggers import get_logger
 # endregion
@@ -75,14 +78,7 @@ def do_f1_filter_for_incident_dict(incident_dict):
                     f"Incident rejected at filter_id {filter_id} with reason: {updated_incident['Filtered_Reason']}")
                 return updated_incident
 
-        # # If already filtered before, don't apply Level 2
-        # if incident_dict.get("Filtered_Reason"):
-        #     logger_INC1A01.info("Incident already filtered by level 1 filter. Skipping level 2 filtering.")
-        #     return incident_dict
-
-        # If no Level 1 filter triggered, apply Level 2
-        logger_INC1A01.info("No filter triggered at level 01. Running level 02 filters...")
-        return do_f1_filter_level_02_for_incident_dict(incident_dict)
+        return incident_dict
 
     except DataNotFoundError:
         logger_INC1A01.exception("Missing Filter IDs")
@@ -120,19 +116,41 @@ def get_modified_incident_dict(incident_dict):
             raise AccountNumberAlreadyExists(f"{incident_dict.get('account_number')} already exists in open cases")
 
         # Add linked accounts with respect to customer_ref
-        incident_dict = link_accounts_from_open_cases(incident_dict)
+        incident_dict_with_link_accounts = link_accounts_from_open_accounts(incident_dict)
+
+        # Stop if an error occurred during arrears assignment
+        if incident_dict_with_link_accounts.get("Incident_Status") == "Error":
+            raise NotModifiedResponse(f"Arrears band not modified: {incident_dict_with_link_accounts}")
 
         # Assign arrears band using configured bands
-        incident_dict_with_arrears_band = assign_arrears_band(incident_dict)
+        incident_dict_with_arrears_band = assign_arrears_band(incident_dict_with_link_accounts)
 
         # Stop if an error occurred during arrears assignment
         if incident_dict_with_arrears_band.get("Incident_Status") == "Error":
             raise NotModifiedResponse(f"Arrears band not modified: {incident_dict_with_arrears_band}")
 
         # Apply filtering rules
-        final_result = do_f1_filter_for_incident_dict(incident_dict_with_arrears_band)
-        logger_INC1A01.debug("Final result:", final_result)
-        return final_result
+        F1_Filter_Results = do_f1_filter_for_incident_dict(incident_dict_with_arrears_band)
+        logger_INC1A01.debug(f"F1 result: {F1_Filter_Results}")
+
+        if F1_Filter_Results.get("Incident_Status") == "Error":
+            raise NotModifiedResponse(f"Arrears band not modified: {F1_Filter_Results}")
+
+        # If already filtered before, don't apply Select_Criteria
+        if F1_Filter_Results.get("Filtered_Reason"):
+            logger_INC1A01.info("Incident already filtered by level 1 filter. Skipping level 2 filtering.")
+            return F1_Filter_Results
+
+        # If no F1 filter triggered, apply Level Select_Criteria
+        logger_INC1A01.info("No filter triggered at F1 filter. Running Select_Criteria...")
+        Select_Criteria_result = Select_Criteria_for_incident_dict(incident_dict)
+
+        if Select_Criteria_result.get("Incident_Status") == "Error":
+            raise NotModifiedResponse(f"Arrears band not modified: {Select_Criteria_result}")
+
+        logger_INC1A01.info(f"Select criteria result{Select_Criteria_result}")
+        return Select_Criteria_result
+
 
     except AccountNumberAlreadyExists as account_number_already_exists:
         logger_INC1A01.info(str(account_number_already_exists))
@@ -156,3 +174,7 @@ def get_modified_incident_dict(incident_dict):
         return incident_dict
 # endregion
 
+
+if __name__ == '__main__':
+    initialize_hash_maps()
+    print(get_modified_incident_dict(incident_dict))

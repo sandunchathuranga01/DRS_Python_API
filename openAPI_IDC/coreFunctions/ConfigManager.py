@@ -86,4 +86,3 @@ def get_config(category, key=None):
         return HASH_MAP.get(category, {}).get(key, None)
     return HASH_MAP.get(category, {})
 # endregion
-

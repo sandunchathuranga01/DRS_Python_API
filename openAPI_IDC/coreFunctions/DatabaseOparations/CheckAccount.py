@@ -17,152 +17,300 @@
 
 # region Imports
 from pymongo import MongoClient
-from openAPI_IDC.coreFunctions.ConfigManager import get_config
+from openAPI_IDC.coreFunctions.ConfigManager import get_config, initialize_hash_maps
 from openAPI_IDC.coreFunctions.F1_Filter.example_incident_dict import incident_dict
 from utils.logger.loggers import get_logger
+from datetime import datetime
 # endregion
 
 # region Logger Initialization
 logger_INC1A01 = get_logger('INC1A01')
 # endregion
 
+# region Global Variables
+customer_link_accounts_details = []
+# endregion
+
 # region has_open_case_for_account
 def has_open_case_for_account(incident_dict):
     """
-    Checks if there is any open case (status not in ["Case Close", "Write-Off", "Abandoned", "Withdraw"])
-    for the given Account_Num in the incident_dict.
+        Checks if there is at least one **open case** for the given Account_Num
+        in the 'Case_details' collection.
 
-    Returns:
-        True  -> if at least one open case is found
-        False -> if no open cases or if an error occurs
-    """
-    client = None
-    try:
-        # Load MongoDB configuration (URI and DB name) from the config hash map
-        db_config = get_config("database", "DATABASE")
+        A case is considered "open" if the case_current_status is NOT in
+        ["close", "write-off", "abandoned", "withdraw"], ignoring case sensitivity.
 
-        # Initialize the MongoDB client
-        client = MongoClient(db_config.get("mongo_uri").strip())
+        Args:
+            incident_dict (dict): A dictionary that must contain the key 'Account_Num'.
 
-        # Test the connection to the MongoDB server
-        client.admin.command('ping')
+        Returns:
+            "True"  -> if at least one open case is found.
+            "False" -> if no open cases are found or if any error occurs.
+        """
 
-        # Access the specific database
-        db = client[db_config.get("db_name").strip()]
-
-    except Exception as e:
-        # Log any errors during connection setup
-        logger_INC1A01.error(f"Connection error: {e}")
-
-    else:
-        try:
-            # Select the Case_details collection
-            collection = db["Case_details"]
-
-            # Build query to find open cases for the given account number
-            query = {
-                "account_no": incident_dict.get("Account_Num"),
-                "case_current_status": {
-                    # Exclude cases that are already closed or inactive
-                    "$nin": ["Case Close", "Write-Off", "Abandoned", "Withdraw"]
-                }
-            }
-
-            # Count how many documents match the criteria
-            Count_of_active_cases = len(list(collection.find(query)))
-
-            # Return True if there's at least one open case
-            if Count_of_active_cases > 0:
-                return True
-            else:
-                return False
-
-        except Exception as e:
-            # Log any errors that occur during query execution
-            logger_INC1A01.error(f"Error while checking open cases for account: {e}")
-            return False
-
-    finally:
-        # Ensure the MongoDB client is closed after the operation
-        if client:
-            client.close()
-            logger_INC1A01.info("MongoDB connection closed.")
-
-# endregion
-
-# region link_accounts_from_open_cases
-def link_accounts_from_open_cases(incident_dict):
-    """
-    Finds all open cases for the same customer_ref and adds related Account_Num
-    to the 'Link_Accounts' field of the incident_dict (if not already added).
-    Returns the updated incident_dict.
-    """
     client = None
     try:
         # Load MongoDB configuration
         db_config = get_config("database", "DATABASE")
 
-        # Create MongoDB client and connect
+        # Connect to MongoDB
+        client = MongoClient(db_config.get("mongo_uri").strip())
+        client.admin.command('ping')  # Ensure MongoDB is reachable
+
+        # Get database and collection
+        db = client[db_config.get("db_name").strip()]
+
+    except Exception as err:
+        # Handle any errors that occur during connection setup
+        logger_INC1A01.info(f"Connection error: {err}")
+        return "False"
+
+    else:
+        try:
+            collection = db["Case_details"]
+
+            # Define the query to check for open cases
+            query = {
+                "$expr": {
+                    "$and": [
+                        {"$eq": ["$Account_Num", incident_dict.get("Account_Num")]},
+                        {
+                            "$not": {
+                                "$in": [
+                                    {"$toLower": "$case_current_status"},
+                                    ["close", "write-off", "abandoned", "withdraw"]
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+
+            # Check if any matching document exists
+            Open_acc = collection.find_one(query)
+
+            logger_INC1A01.debug(Open_acc)
+
+            if Open_acc:
+                logger_INC1A01.info("open cases found for relevant account")
+                return "True"
+
+            else:
+                logger_INC1A01.info("No open cases found for relevant account")
+                return "False"
+
+
+        except Exception as e:
+            logger_INC1A01.error(f"Error: {e}")
+            return "False"
+
+    finally:
+        # Close the MongoDB client connection
+        if client:
+            client.close()
+
+
+# endregion
+
+# region Link Accounts Function
+def link_accounts_from_open_accounts(incident_dict):
+    logger_INC1A01.info("Started linking accounts from open incidents and cases.")
+    customer_link_accounts_details.clear()
+    try:
+        customer_ref = incident_dict['customer_ref']
+        logger_INC1A01.debug(f"Customer Ref: {customer_ref}")
+
+        root_account_details = get_root_account_details(incident_dict)
+
+        open_accounts_caseDetails = get_same_customer_accounts_from_case_details(customer_ref)
+        open_accounts_incidents = get_same_customer_accounts_from_Incidents(customer_ref)
+
+        logger_INC1A01.info(f"Found {len(open_accounts_caseDetails)} open case(s)")
+        logger_INC1A01.info(f"Found {len(open_accounts_incidents)} open incident(s)")
+
+        # Root Account
+        entry = {
+            "Incident_Id": root_account_details.get("Incident_Id", ""),
+            "Case_Id": "",
+            "Account_Num": root_account_details.get("Account_Num", ""),
+            "Account_Status": root_account_details.get("Incident_Status", ""),
+            "OutstandingBalance": root_account_details.get("Arrears", 0)
+        }
+        customer_link_accounts_details.append(entry)
+
+        # Open Incidents
+        for item in open_accounts_incidents:
+            customer_link_accounts_details.append({
+                "Incident_Id": item.get("Incident_Id", ""),
+                "Case_Id": "",
+                "Account_Num": item.get("Account_Num", ""),
+                "Account_Status": item.get("Incident_Status", ""),
+                "OutstandingBalance": item.get("Arrears", 0)
+            })
+
+        # Open Case Details
+        for item in open_accounts_caseDetails:
+            customer_link_accounts_details.append({
+                "Incident_Id": "",
+                "Case_Id": item.get("case_id", ""),
+                "Account_Num": item.get("Account_Num", ""),
+                "Account_Status": item.get("case_current_status", ""),
+                "OutstandingBalance": item.get("bss_arrears_amount", 0)
+            })
+
+        incident_dict["Account_Cross_Details"] = customer_link_accounts_details
+        logger_INC1A01.info(f"Linked accounts added to incident dictionary successfully: {incident_dict}")
+        return incident_dict
+
+    except Exception as e:
+        logger_INC1A01.error(f"Unexpected error during linking accounts: {e}")
+        incident_dict["Incident_Status"] = "Error"
+        incident_dict["Incident_Status_Dtm"] = datetime.now().isoformat()
+        incident_dict["Status_Description"] = str(e)
+        return incident_dict
+
+# endregion
+
+# region MongoDB - Get Open Case Details
+def get_same_customer_accounts_from_case_details(customer_ref: str) -> list:
+    """
+    Retrieves open case details from 'Case_details' collection for the given customer reference.
+
+    Args:
+        customer_ref (str): Customer reference ID
+
+    Returns:
+        list: List of dictionaries containing case details.
+    """
+    logger_INC1A01.info(f"Fetching open cases for customer_ref: {customer_ref}")
+    client = None
+    try:
+        db_config = get_config("database", "DATABASE")
         client = MongoClient(db_config.get("mongo_uri").strip())
         client.admin.command('ping')
         db = client[db_config.get("db_name").strip()]
 
+        collection = db["Case_details"]
+
+        query = {
+            "$expr": {
+                "$and": [
+                    {"$eq": ["$customer_ref", customer_ref]},
+                    {
+                        "$not": {
+                            "$in": [
+                                {"$toLower": "$case_current_status"},
+                                ["close", "write-off", "abandoned", "withdraw"]
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+
+        results = list(collection.find(query, {
+            "case_id": 1,
+            "Account_Num": 1,
+            "case_current_status": 1,
+            "bss_arrears_amount": 1,
+            "_id": 0
+        }))
+        logger_INC1A01.debug(f"Query returned {results} case records.")
+        return results
+
     except Exception as e:
-        logger_INC1A01.error(f"Connection error: {e}")
-        return False
-
-    else:
-        try:
-            # Get the case collection
-            collection = db["Case_details"]
-
-            # Get customer_ref from incident
-            customer_ref = incident_dict.get("Customer_Details", {}).get("customer_ref")
-
-            # Make sure Link_Accounts is a list
-            if not isinstance(incident_dict.get("Link_Accounts"), list):
-                incident_dict["Link_Accounts"] = []
-
-            # Search for all open cases with the same customer_ref
-            case_documents = collection.find({"customer_ref": customer_ref})
-            added_any = False  # Track if new accounts were added
-
-            for case in case_documents:
-                status = case.get("case_current_status", "").lower()
-
-                # Only process cases that are not closed
-                if status != "close":
-                    account_num = case.get("Account_Num")
-                    if account_num:
-                        # Check if this account is already linked
-                        already_linked = any(
-                            acc.get("Account_Num") == account_num
-                            for acc in incident_dict["Link_Accounts"]
-                        )
-                        if not already_linked:
-                            # Add new linked account
-                            incident_dict["Link_Accounts"].append({"Account_Num": account_num})
-                            logger_INC1A01.info(f"Linked Account_Num {account_num} added.")
-                            added_any = True
-                        else:
-                            logger_INC1A01.info(f"Account_Num {account_num} already exists in Link_Accounts.")
-
-            if not added_any:
-                logger_INC1A01.info(f"No new open accounts found for customer_ref: {customer_ref}")
-
-            return incident_dict
-
-        except Exception as e:
-            logger_INC1A01.error(f"Error checking open cases for customer_ref: {e}")
-            return incident_dict
+        logger_INC1A01.error(f"Error retrieving case details for customer_ref {customer_ref}: {e}")
+        return []
 
     finally:
-        # Always close the client
         if client:
             client.close()
-            logger_INC1A01.info("MongoDB connection closed.")
 # endregion
 
 
-if __name__ == "__main__":
-    has_open_case_for_account(incident_dict)
+# region MongoDB - Get Open Incident Details
+def get_same_customer_accounts_from_Incidents(customer_ref: str) -> list:
+    """
+    Retrieves open incident records from 'Incidents' collection for the given customer reference.
+
+    Args:
+        customer_ref (str): Customer reference ID
+
+    Returns:
+        list: List of dictionaries containing incident details.
+    """
+    logger_INC1A01.info(f"Fetching open incidents for customer_ref: {customer_ref}")
+    client = None
+    try:
+        db_config = get_config("database", "DATABASE")
+        client = MongoClient(db_config.get("mongo_uri").strip())
+        client.admin.command('ping')
+        db = client[db_config.get("db_name").strip()]
+
+        collection = db["Incidents"]
+
+        query = {
+            "$and": [
+                { "customer_ref": customer_ref },
+                {
+                    "$or": [
+                        { "Incident_Forwarded_By": { "$in": [None, ""] } },
+                        { "Incident_Forwarded_By": { "$exists": False } }
+                    ]
+                },
+                {
+                    "$or": [
+                        { "Incident_Forwarded_On": { "$in": [None, ""] } },
+                        { "Incident_Forwarded_On": { "$exists": False } }
+                    ]
+                }
+            ]
+        }
+
+        results = list(collection.find(query, {
+            "Incident_Id": 1,
+            "Account_Num": 1,
+            "Incident_Status": 1,
+            "Arrears": 1,
+            "_id": 0
+        }))
+        logger_INC1A01.debug(f"Query returned {results} incident records.")
+        return results
+
+    except Exception as e:
+        logger_INC1A01.error(f"Error retrieving incident details for customer_ref {customer_ref}: {e}")
+        return []
+
+    finally:
+        if client:
+            client.close()
+
+# endregion
+
+
+# region  Get Root Incident Details
+def get_root_account_details(incident_dict):
+    """
+    Extracts root-level incident details from the given incident dictionary.
+
+    Returns:
+        dict: A dictionary with keys 'Incident_Id', 'Account_Num', 'Incident_Status', and 'Arrears'.
+    """
+    results = {
+        "Incident_Id": incident_dict.get("Incident_Id"),
+        "Account_Num": incident_dict.get("Account_Num"),
+        "Incident_Status": incident_dict.get("Incident_Status"),
+        "Arrears": incident_dict.get("Arrears")
+    }
+
+    logger_INC1A01.debug(f"root account details: {results}")
+
+    return results
+# endregion
+
+
+if __name__ == '__main__':
+    initialize_hash_maps()
+    x=link_accounts_from_open_accounts(incident_dict)
+    print(x)
+    print(customer_link_accounts_details)

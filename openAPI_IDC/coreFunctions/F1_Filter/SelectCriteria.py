@@ -23,8 +23,8 @@ from utils.logger.loggers import get_logger
 logger_INC1A01 = get_logger('INC1A01')
 # endregion
 
-# region F1 Level 2 Filter Function
-def do_f1_filter_level_02_for_incident_dict(incident_dict):
+# region Select_Criteria Filter Function
+def Select_Criteria_for_incident_dict(incident_dict):
     """
     Applies Level 2 filtering to the incident based on 'Arrears' value.
 

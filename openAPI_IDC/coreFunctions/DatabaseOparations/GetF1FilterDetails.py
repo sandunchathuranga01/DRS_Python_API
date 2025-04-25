@@ -19,7 +19,7 @@
 from pymongo import MongoClient, errors
 from datetime import datetime, timezone
 from openAPI_IDC.coreFunctions.ConfigManager import get_config, initialize_hash_maps
-from utils.customerExceptions.cust_exceptions import DatabaseConnectionError
+from utils.customerExceptions.cust_exceptions import DatabaseConnectionError, DataNotFoundError
 from utils.logger.loggers import get_logger
 # endregion
 
@@ -53,7 +53,7 @@ def get_active_filters():
 
     except Exception as e:
         logger_INC1A01.error(f"Connection error: {e}")
-        return False
+        return {"success": False, "error": "Mongo DB connection error"}
 
     else:
         try:
@@ -77,7 +77,7 @@ def get_active_filters():
                     new_filter_id = filter_id_map.get(filter_id)
 
                     if new_filter_id is None:
-                        continue  # Skip if mapping not found
+                        raise DataNotFoundError ("unknown filter_id found")
 
                     filter_rule = doc.get("filter_rule", "Unknown Rule")
                     operator = doc.get("operator", "Unknown Operator")
@@ -103,6 +103,10 @@ def get_active_filters():
             logger_INC1A01.error("Unable to connect to MongoDB server.")
             return {}
 
+        except DataNotFoundError as e:
+            logger_INC1A01.error(f"{e}")
+            return {}
+
         except DatabaseConnectionError as database_connection_error:
             logger_INC1A01.error(f"MongoDB Connection Error: {database_connection_error}")
             return {}
@@ -114,7 +118,6 @@ def get_active_filters():
     finally:
         if client:
             client.close()
-            logger_INC1A01.info("MongoDB connection closed.")
 # endregion
 
 # region Load Filter ID Mapping
@@ -155,3 +158,7 @@ def get_new_filter_id_list_from_active_filters():
         logger_INC1A01.error(f"Error fetching new_filter_id list: {e}")
         return []
 # endregion
+
+if __name__ == "__main__":
+    initialize_hash_maps()
+    print(get_active_filters())
