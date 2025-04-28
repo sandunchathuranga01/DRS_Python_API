@@ -76,7 +76,8 @@ def create_incident(incident: Incident):
         incident_dict["Filtered_Reason"] = ""
 
         # Modify retrieve incident data
-        new_incident = get_modified_incident_dict(incident_dict)
+        #new_incident = get_modified_incident_dict(incident_dict)
+        new_incident = incident_dict
 
         # Stop if filtering rejected the incident
         if new_incident.get("Incident_Status") == "Error":
