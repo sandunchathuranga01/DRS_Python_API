@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional,Any
 from datetime import datetime
 
 class ContactDetail(BaseModel):
@@ -54,7 +54,7 @@ class AccountCrossDetails(BaseModel):
     Case_Id: Optional[int] = None
     Account_Num: str
     Account_Status: Optional[str] = None
-    OutstandingBalance:float
+    Outstanding_Balance:float
 
 class LastAction(BaseModel):
     Billed_Seq: Optional[int] = None
@@ -65,8 +65,8 @@ class LastAction(BaseModel):
     Billed_Amount: float
 
 class MarketingDetail(BaseModel):
-    ACCOUNT_MANAGER: Optional[str] = None
-    CONSUMER_MARKET: Optional[str] = None
+    Account_Manager: Optional[str] = None
+    Consumer_Market: Optional[str] = None
     Informed_To: Optional[str] = None
     Informed_On: datetime
 
@@ -74,9 +74,9 @@ class Incident(BaseModel):
     Doc_Version: float = 1.0
     Incident_Id: int
     Account_Num: str
-    customer_ref : str
+    Customer_Ref : str
     Arrears: float
-    arrears_band : Optional[str]
+    Arrears_Band : Optional[str]
     Created_By: str
     Created_Dtm: datetime
     Incident_Status: Optional[str] = None
@@ -105,5 +105,23 @@ class Incident(BaseModel):
     updatedAt: Optional[datetime] = None
     Rejected_By: Optional[str] = None
     Rejected_Dtm: Optional[datetime] = None
-    Arrears_Band: Optional[str] = None
     Source_Type: Optional[str] = None
+    Ref_Data_Temp_Permanent: Optional[List[Any]] = None,
+    Case_Status: Optional[List[Any]] = None,
+    Approvals: Optional[List[Any]] = None,
+    DRC: Optional[List[Any]] = None,
+    RO: Optional[List[Any]] = None,
+    RO_Requests: Optional[List[Any]] = None,
+    RO_Negotiation: Optional[List[Any]] = None,
+    RO_Customer_Details_Edit: Optional[List[Any]] = None,
+    RO_CPE_Collect: Optional[List[Any]] = None,
+    Mediation_Board: Optional[List[Any]] = None,
+    Settlement: Optional[List[Any]] = None,
+    Money_Transactions: Optional[List[Any]] = None,
+    Commission_Bill_Payment: Optional[List[Any]] = None,
+    Bonus: Optional[List[Any]] = None,
+    FTL_LOD: Optional[List[Any]] = None,
+    Litigation: Optional[List[Any]] = None,
+    LOD_Final_Reminder: Optional[List[Any]] = None,
+    Dispute: Optional[List[Any]] = None,
+    Abnormal_Stop: Optional[List[Any]] = None

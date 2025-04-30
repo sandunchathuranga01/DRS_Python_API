@@ -23,7 +23,6 @@ from pymongo import MongoClient
 from typing import List, Dict
 from pymongo.errors import DuplicateKeyError
 from openAPI_IDC.coreFunctions.ConfigManager import get_config
-from openAPI_IDC.coreFunctions.F1_Filter.example_incident_dict import incident_dict
 from utils.logger.loggers import get_logger
 # endregion
 
@@ -65,7 +64,7 @@ def create_incident_data_manipulation(customer_link_accounts_details: List[Dict]
                 inserted_id = root_result.inserted_id
                 logger_INC1A01.info(f"Incident inserted successfully with ID: {new_incident['Incident_Id']}")
             except DuplicateKeyError as dup_err:
-                logger_INC1A01.error(f"Duplicate Incident_Id: {incident_dict['Incident_Id']}")
+                logger_INC1A01.error(f"Duplicate Incident_Id: {new_incident['Incident_Id']}")
                 logger_INC1A01.error(f"Original incident: {new_incident}")
                 return {"success": False, "error": dup_err}
             except Exception as e:
@@ -76,7 +75,7 @@ def create_incident_data_manipulation(customer_link_accounts_details: List[Dict]
             # region Linked Account Checks
             if not customer_link_accounts_details or len(customer_link_accounts_details) < 2:
                 logger_INC1A01.info("No linked accounts to process.")
-                return {"success": True, "data": incident_dict["Incident_Id"]}
+                return {"success": True, "data": new_incident["Incident_Id"]}
 
             root_details = customer_link_accounts_details[0]
             linked_accounts = customer_link_accounts_details[1:]
@@ -113,7 +112,7 @@ def create_incident_data_manipulation(customer_link_accounts_details: List[Dict]
             # endregion
 
             logger_INC1A01.info("All updates completed successfully.")
-            return {"success": True, "data": incident_dict["Incident_Id"]}
+            return {"success": True, "data": new_incident["Incident_Id"]}
 
         # region Rollback on Failure
         except Exception as e:

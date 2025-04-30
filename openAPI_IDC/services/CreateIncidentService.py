@@ -66,6 +66,7 @@ def create_incident(incident: Incident):
         IncidentServiceResponse: Contains success flag, inserted incident ID, or an error.
     """
     try:
+        logger_INC1A01.debug(incident)
         # Convert the Pydantic model(CreateIncidentModel.py) to a dictionary
         incident_dict = incident.dict()
 
@@ -79,6 +80,8 @@ def create_incident(incident: Incident):
         #new_incident = get_modified_incident_dict(incident_dict)
         new_incident = incident_dict
 
+        logger_INC1A01.debug(new_incident)
+
         # Stop if filtering rejected the incident
         if new_incident.get("Incident_Status") == "Error":
             raise NotModifiedResponse(new_incident.get("Status_Description"))
@@ -88,6 +91,8 @@ def create_incident(incident: Incident):
 
         # Insert and update incident
         result = create_incident_data_manipulation(customer_link_accounts_details, new_incident)
+
+        logger_INC1A01.debug(result)
 
         if not result.get("success"):
             logger_INC1A01.error(f"Data manipulation failed: {result.get('error')}")
