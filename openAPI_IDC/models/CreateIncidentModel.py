@@ -68,7 +68,7 @@ class MarketingDetail(BaseModel):
     Account_Manager: Optional[str] = None
     Consumer_Market: Optional[str] = None
     Informed_To: Optional[str] = None
-    Informed_On: datetime
+    Informed_On: Optional[datetime] = None
 
 class Incident(BaseModel):
     Doc_Version: float = 1.0
