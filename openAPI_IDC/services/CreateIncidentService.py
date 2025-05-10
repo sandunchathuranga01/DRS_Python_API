@@ -104,9 +104,11 @@ def create_incident(incident: Incident):
         # Log the final Incident_Id that will be used (whether provided or newly generated)
         logger_INC1A01.debug(f"Final Incident_Id being used: {incident_dict['Incident_Id']}")
 
+        logger_INC1A01.debug(incident_dict)
+
         # Modify retrieve incident data
-        #new_incident = get_modified_incident_dict(incident_dict)
-        new_incident = incident_dict
+        new_incident = get_modified_incident_dict(incident_dict)
+        #new_incident = incident_dict
 
         logger_INC1A01.debug(new_incident)
 

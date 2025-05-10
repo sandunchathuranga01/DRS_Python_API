@@ -120,7 +120,7 @@ def get_modified_incident_dict(incident_dict):
 
         # Stop if an error occurred during arrears assignment
         if incident_dict_with_link_accounts.get("Incident_Status") == "Error":
-            raise NotModifiedResponse(f"Arrears band not modified: {incident_dict_with_link_accounts}")
+            raise NotModifiedResponse(f"Error Occurred during the link accounts {incident_dict_with_link_accounts}")
 
         # Assign arrears band using configured bands
         incident_dict_with_arrears_band = assign_arrears_band(incident_dict_with_link_accounts)

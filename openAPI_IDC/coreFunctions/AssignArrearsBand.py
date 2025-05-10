@@ -22,7 +22,10 @@
 
 # region Imports
 from datetime import datetime
+
+from openAPI_IDC.coreFunctions.ConfigManager import initialize_hash_maps
 from openAPI_IDC.coreFunctions.DatabaseOparations.GetArrearsBandDetails import get_arrears_bands_details
+from openAPI_IDC.coreFunctions.F1_Filter.example_incident_dict import incident_dict
 from utils.customerExceptions.cust_exceptions import DataNotFoundError
 from utils.logger.loggers import get_logger
 # endregion
@@ -94,7 +97,7 @@ def assign_arrears_band(incident_dict):
                         continue
 
         # Assign the matched band to the incident
-        incident_dict["arrears_band"] = band_found
+        incident_dict["Arrears_Band"] = band_found
         logger_INC1A01.info(f"arrears band assign incident dict: {incident_dict}")
         return incident_dict
 
@@ -113,3 +116,8 @@ def assign_arrears_band(incident_dict):
         incident_dict["Status_Description"] = e
         return incident_dict
 # endregion
+
+
+if __name__ == "__main__":
+    initialize_hash_maps()
+    assign_arrears_band(incident_dict)

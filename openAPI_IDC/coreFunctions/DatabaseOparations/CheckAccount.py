@@ -117,7 +117,7 @@ def link_accounts_from_open_accounts(incident_dict):
     logger_INC1A01.info("Started linking accounts from open incidents and cases.")
     customer_link_accounts_details.clear()
     try:
-        customer_ref = incident_dict['customer_ref']
+        customer_ref = incident_dict['Customer_Ref']
         logger_INC1A01.debug(f"Customer Ref: {customer_ref}")
 
         root_account_details = get_root_account_details(incident_dict)
@@ -311,6 +311,5 @@ def get_root_account_details(incident_dict):
 
 if __name__ == '__main__':
     initialize_hash_maps()
-    x=link_accounts_from_open_accounts(incident_dict)
-    print(x)
-    print(customer_link_accounts_details)
+    print(link_accounts_from_open_accounts(incident_dict))
+
