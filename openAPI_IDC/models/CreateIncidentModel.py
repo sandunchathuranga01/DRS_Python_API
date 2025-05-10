@@ -72,7 +72,7 @@ class MarketingDetail(BaseModel):
 
 class Incident(BaseModel):
     Doc_Version: float = 1.0
-    Incident_Id: int
+    Incident_Id: Optional[int] = None
     Account_Num: str
     Customer_Ref : str
     Arrears: float

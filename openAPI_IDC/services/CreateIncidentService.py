@@ -24,6 +24,7 @@ from datetime import datetime
 from openAPI_IDC.coreFunctions.ConfigManager import initialize_hash_maps
 from openAPI_IDC.coreFunctions.DataManipulation import create_incident_data_manipulation
 from openAPI_IDC.coreFunctions.DatabaseOparations.CheckAccount import customer_link_accounts_details
+from openAPI_IDC.coreFunctions.DatabaseOparations.getNextIncidentID import get_next_incident_id
 from openAPI_IDC.coreFunctions.ModifyIncidentDict import get_modified_incident_dict
 from openAPI_IDC.models.CreateIncidentModel import Incident
 from utils.customerExceptions.cust_exceptions import NotModifiedResponse
@@ -45,6 +46,7 @@ class IncidentServiceResponse:
         self.data = data
         self.error = error
 # endregion
+
 
 # region Main Function
 def create_incident(incident: Incident):
@@ -70,11 +72,37 @@ def create_incident(incident: Incident):
         # Convert the Pydantic model(CreateIncidentModel.py) to a dictionary
         incident_dict = incident.dict()
 
+
         # Initial status set to Success
         incident_dict["Incident_Status"] = "Success"
 
         # Placeholder for filter reason (empty initially)
         incident_dict["Filtered_Reason"] = ""
+
+        # Handle Incident_Id
+        if incident_dict.get("Incident_Id"):
+            # If Incident_Id is already provided in the request, log it
+            logger_INC1A01.info(f"Incident_Id provided: {incident_dict['Incident_Id']}")
+        else:
+            # Log that no Incident_Id was provided and a new one will be generated
+            logger_INC1A01.info("Incident_Id not provided. Finding new Incident_Id for incident...")
+
+            # Call helper function to get the next available Incident_Id
+            next_id = get_next_incident_id()
+
+            # If ID generation failed (returns -1), log and raise an exception
+            if next_id < 0:
+                logger_INC1A01.error("New Incident_Id creation error")
+                raise NotModifiedResponse("New Incident_Id creation error")
+
+            # Assign the newly generated Incident_Id to the dictionary
+            incident_dict["Incident_Id"] = next_id
+
+            # Log the newly generated Incident_Id
+            logger_INC1A01.info(f"New Incident_Id assigned: {incident_dict['Incident_Id']}")
+
+        # Log the final Incident_Id that will be used (whether provided or newly generated)
+        logger_INC1A01.debug(f"Final Incident_Id being used: {incident_dict['Incident_Id']}")
 
         # Modify retrieve incident data
         #new_incident = get_modified_incident_dict(incident_dict)
