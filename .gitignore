@@ -1,28 +1,24 @@
 # Byte-compiled files
 *.pyc
 *.pyo
-__pycache__/
 *.pyd
+__pycache__/
 
-# Virtual environment
+# Virtual environment folders
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
 
-# VS Code settings
+# IDE settings
 .vscode/
-
-# PyCharm settings
 .idea/
 
+# Custom/project-specific ignored folders
 .testArea/
-
 .bin/
 
-
-
-
-
-
+# Ignored individual files
+main.py
+Config/logConfig.ini
