@@ -77,6 +77,8 @@ class Incident(BaseModel):
     Customer_Ref : str
     Arrears: float
     Arrears_Band : Optional[str]
+    Bss_Arrears_Amount : float
+    Last_Bss_Reading_Date : datetime
     Created_By: str
     Created_Dtm: datetime
     Incident_Status: Optional[str] = None
